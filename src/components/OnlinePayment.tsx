@@ -17,7 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerClose, DrawerFooter } from "@/components/ui/drawer";
 
 export interface ServiceType {
   id: string;
@@ -33,6 +35,10 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState(1);
+  const [isContractOpen, setIsContractOpen] = useState(false);
+  const [acceptedContract, setAcceptedContract] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
 
   const handleServiceSelect = (serviceId: string) => {
     setSelectedService(serviceId);
@@ -41,6 +47,10 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
   };
 
   const handlePaymentStepNext = () => {
+    if (paymentStep === 1 && !acceptedContract) {
+      setIsContractOpen(true);
+      return;
+    }
     setPaymentStep(prev => prev + 1);
   };
 
@@ -54,9 +64,16 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
     setPaymentStep(3); // Переход к сообщению об успешной оплате
   };
 
+  const handleAcceptContract = () => {
+    setAcceptedContract(true);
+    setIsContractOpen(false);
+  };
+
   const getServiceById = (id: string) => {
     return services.find(service => service.id === id);
   };
+
+  const currentDate = new Date().toISOString().split('T')[0];
 
   return (
     <>
@@ -112,12 +129,18 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">Выберите дату</label>
-                <Input type="date" className="w-full" />
+                <Input 
+                  type="date" 
+                  className="w-full" 
+                  min={currentDate}
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
               </div>
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">Выберите время</label>
-                <Select>
+                <Select value={selectedTime} onValueChange={setSelectedTime}>
                   <SelectTrigger>
                     <SelectValue placeholder="Выберите время" />
                   </SelectTrigger>
@@ -129,10 +152,41 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
                 </Select>
               </div>
               
+              <div className="flex items-start space-x-2 pt-2">
+                <Checkbox 
+                  id="contract" 
+                  checked={acceptedContract}
+                  onCheckedChange={(checked) => {
+                    if (checked === true && !acceptedContract) {
+                      setIsContractOpen(true);
+                    } else {
+                      setAcceptedContract(!!checked);
+                    }
+                  }}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="contract"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Я принимаю условия договора оферты
+                  </label>
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsContractOpen(true);
+                    }} 
+                    className="text-sm text-[#9b87f5] hover:underline"
+                  >
+                    Ознакомиться с договором
+                  </button>
+                </div>
+              </div>
+              
               <div className="pt-4">
                 <Button 
                   onClick={handlePaymentStepNext} 
-                  disabled={!selectedService}
+                  disabled={!selectedService || !selectedDate || !selectedTime || !acceptedContract}
                   className="w-full bg-[#9b87f5] hover:bg-[#7E69AB]"
                 >
                   Продолжить
@@ -148,6 +202,12 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
                   <span>Услуга:</span>
                   <span className="font-medium">
                     {selectedService && getServiceById(selectedService)?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <span>Дата и время:</span>
+                  <span className="font-medium">
+                    {selectedDate}, {selectedTime}
                   </span>
                 </div>
                 <div className="flex justify-between mt-2">
@@ -214,6 +274,12 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
                   </span>
                 </div>
                 <div className="flex justify-between mt-2">
+                  <span>Дата и время:</span>
+                  <span className="font-medium">
+                    {selectedDate}, {selectedTime}
+                  </span>
+                </div>
+                <div className="flex justify-between mt-2">
                   <span>Сумма:</span>
                   <span className="font-medium">
                     {selectedService && getServiceById(selectedService)?.price} ₽
@@ -234,6 +300,123 @@ const OnlinePayment = ({ services }: OnlinePaymentProps) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Модальное окно с договором оферты */}
+      <Drawer open={isContractOpen} onOpenChange={setIsContractOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Договор оферты на оказание психологических услуг</DrawerTitle>
+            <DrawerDescription>
+              Пожалуйста, внимательно прочтите все условия договора
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 h-[60vh] overflow-y-auto">
+            <div className="space-y-4 text-sm">
+              <h3 className="font-bold text-base">1. ОБЩИЕ ПОЛОЖЕНИЯ</h3>
+              <p>
+                1.1. Настоящий документ является публичной офертой (далее — «Договор») на оказание психологических услуг 
+                индивидуальным предпринимателем Еленой Петровой (далее — «Исполнитель») и содержит все существенные условия.
+              </p>
+              <p>
+                1.2. В соответствии с пунктом 2 статьи 437 Гражданского Кодекса Российской Федерации (ГК РФ), 
+                в случае принятия изложенных ниже условий и оплаты услуг физическое лицо, производящее акцепт этой 
+                оферты, становится Заказчиком (в соответствии с пунктом 3 статьи 438 ГК РФ акцепт оферты равносилен 
+                заключению договора на условиях, изложенных в оферте).
+              </p>
+              
+              <h3 className="font-bold text-base">2. ПРЕДМЕТ ДОГОВОРА</h3>
+              <p>
+                2.1. Исполнитель обязуется предоставить Заказчику психологические услуги в форме индивидуальных или
+                семейных консультаций, а Заказчик обязуется оплатить эти услуги в соответствии с условиями настоящего Договора.
+              </p>
+              <p>
+                2.2. Формат оказания услуг: личные консультации или онлайн-консультации посредством видеосвязи.
+              </p>
+              
+              <h3 className="font-bold text-base">3. ПРАВА И ОБЯЗАННОСТИ СТОРОН</h3>
+              <p>
+                3.1. Исполнитель обязуется:
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Оказывать услуги качественно, в полном объеме и в согласованные сроки;</li>
+                <li>Соблюдать конфиденциальность информации, полученной от Заказчика;</li>
+                <li>Предоставлять Заказчику необходимую и достоверную информацию об услугах;</li>
+                <li>Применять профессиональные методы работы в рамках оказываемых услуг.</li>
+              </ul>
+              
+              <p>
+                3.2. Заказчик обязуется:
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Своевременно оплачивать услуги Исполнителя;</li>
+                <li>Предоставлять достоверную информацию, необходимую для оказания услуг;</li>
+                <li>Соблюдать рекомендации Исполнителя;</li>
+                <li>Извещать Исполнителя об отмене или переносе консультации не менее чем за 24 часа до назначенного времени.</li>
+              </ul>
+              
+              <h3 className="font-bold text-base">4. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</h3>
+              <p>
+                4.1. Стоимость услуг определяется в соответствии с действующими тарифами Исполнителя, 
+                указанными на сайте и в настоящем Договоре.
+              </p>
+              <p>
+                4.2. Оплата услуг производится Заказчиком на условиях 100% предоплаты путем перечисления 
+                денежных средств на расчетный счет Исполнителя или иным способом, указанным на сайте.
+              </p>
+              <p>
+                4.3. В случае отмены консультации менее чем за 24 часа до назначенного времени, 
+                Исполнитель вправе удержать 50% от стоимости консультации в качестве компенсации.
+              </p>
+              
+              <h3 className="font-bold text-base">5. ОТВЕТСТВЕННОСТЬ СТОРОН</h3>
+              <p>
+                5.1. За неисполнение или ненадлежащее исполнение своих обязательств по настоящему Договору 
+                Стороны несут ответственность в соответствии с действующим законодательством Российской Федерации.
+              </p>
+              <p>
+                5.2. Исполнитель не несет ответственности за результат применения Заказчиком полученных рекомендаций, 
+                так как конечный результат во многом зависит от индивидуальных особенностей и усилий самого Заказчика.
+              </p>
+              
+              <h3 className="font-bold text-base">6. КОНФИДЕНЦИАЛЬНОСТЬ</h3>
+              <p>
+                6.1. Исполнитель обязуется сохранять в тайне всю информацию, полученную от Заказчика в процессе оказания услуг.
+              </p>
+              <p>
+                6.2. Условия конфиденциальности могут быть нарушены в случаях, предусмотренных законодательством РФ, 
+                а также если имеется угроза жизни и здоровью Заказчика или третьих лиц.
+              </p>
+              
+              <h3 className="font-bold text-base">7. СРОК ДЕЙСТВИЯ ДОГОВОРА</h3>
+              <p>
+                7.1. Настоящий Договор вступает в силу с момента акцепта оферты (оплаты услуг) и действует 
+                до полного исполнения Сторонами своих обязательств.
+              </p>
+              
+              <h3 className="font-bold text-base">8. ЗАКЛЮЧИТЕЛЬНЫЕ ПОЛОЖЕНИЯ</h3>
+              <p>
+                8.1. Все споры и разногласия, возникающие между Сторонами по настоящему Договору, 
+                разрешаются путем переговоров.
+              </p>
+              <p>
+                8.2. Во всем остальном, что не предусмотрено настоящим Договором, Стороны руководствуются 
+                действующим законодательством Российской Федерации.
+              </p>
+            </div>
+          </div>
+          <DrawerFooter>
+            <Button 
+              onClick={handleAcceptContract} 
+              className="bg-[#9b87f5] hover:bg-[#7E69AB]"
+            >
+              Принимаю условия договора
+            </Button>
+            <DrawerClose asChild>
+              <Button variant="outline">Закрыть</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 };
