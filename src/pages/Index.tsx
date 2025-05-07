@@ -4,8 +4,46 @@ import { Card, CardContent } from "@/components/ui/card";
 import Icon from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Index = () => {
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [paymentStep, setPaymentStep] = useState(1);
+
+  const services = [
+    { id: "individual", name: "Индивидуальная терапия", price: 3000 },
+    { id: "family", name: "Семейная терапия", price: 4500 },
+    { id: "online", name: "Онлайн-консультация", price: 2500 }
+  ];
+
+  const handleServiceSelect = (serviceId: string) => {
+    setSelectedService(serviceId);
+    setIsPaymentOpen(true);
+    setPaymentStep(1);
+  };
+
+  const handlePaymentStepNext = () => {
+    setPaymentStep(prev => prev + 1);
+  };
+
+  const handlePaymentClose = () => {
+    setIsPaymentOpen(false);
+    setPaymentStep(1);
+  };
+
+  const handlePaymentComplete = () => {
+    // Здесь можно добавить логику обработки платежа
+    setPaymentStep(3); // Переход к сообщению об успешной оплате
+  };
+
+  const getServiceById = (id: string) => {
+    return services.find(service => service.id === id);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F6F7FB]">
       {/* Шапка сайта */}
@@ -110,44 +148,51 @@ const Index = () => {
           </p>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-[#E5DEFF] w-14 h-14 flex items-center justify-center mb-4">
-                  <Icon name="UserCheck" className="h-6 w-6 text-[#9b87f5]" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Индивидуальная терапия</h3>
-                <p className="text-gray-600">
-                  Персональные консультации для решения конкретных психологических проблем
-                </p>
-                <div className="mt-4 text-[#9b87f5] font-medium">От 3000 ₽ / сессия</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-[#E5DEFF] w-14 h-14 flex items-center justify-center mb-4">
-                  <Icon name="Users" className="h-6 w-6 text-[#9b87f5]" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Семейная терапия</h3>
-                <p className="text-gray-600">
-                  Работа с парами и семьями для улучшения отношений и коммуникации
-                </p>
-                <div className="mt-4 text-[#9b87f5] font-medium">От 4500 ₽ / сессия</div>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="rounded-full bg-[#E5DEFF] w-14 h-14 flex items-center justify-center mb-4">
-                  <Icon name="Globe" className="h-6 w-6 text-[#9b87f5]" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Онлайн-консультации</h3>
-                <p className="text-gray-600">
-                  Удаленные сессии с психологом в удобное для вас время через видеосвязь
-                </p>
-                <div className="mt-4 text-[#9b87f5] font-medium">От 2500 ₽ / сессия</div>
-              </CardContent>
-            </Card>
+            {services.map((service) => (
+              <Card key={service.id} className="border-none shadow-md hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="rounded-full bg-[#E5DEFF] w-14 h-14 flex items-center justify-center mb-4">
+                    <Icon 
+                      name={service.id === "individual" ? "UserCheck" : service.id === "family" ? "Users" : "Globe"} 
+                      className="h-6 w-6 text-[#9b87f5]" 
+                    />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{service.name}</h3>
+                  <p className="text-gray-600 mb-4">
+                    {service.id === "individual" ? "Персональные консультации для решения конкретных психологических проблем" :
+                     service.id === "family" ? "Работа с парами и семьями для улучшения отношений и коммуникации" :
+                     "Удаленные сессии с психологом в удобное для вас время через видеосвязь"}
+                  </p>
+                  <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="text-[#9b87f5] font-medium">От {service.price} ₽ / сессия</div>
+                    <Button 
+                      onClick={() => handleServiceSelect(service.id)}
+                      size="sm" 
+                      className="bg-[#9b87f5] hover:bg-[#7E69AB]"
+                    >
+                      <Icon name="CreditCard" className="mr-2 h-4 w-4" />
+                      Оплатить
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="mt-10 p-5 bg-[#E5DEFF] rounded-lg">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-[#6E59A5]">Онлайн-оплата консультаций</h3>
+                <p className="text-gray-700">Быстро, удобно и безопасно оплачивайте услуги психолога онлайн</p>
+              </div>
+              <Button 
+                onClick={() => setIsPaymentOpen(true)} 
+                className="bg-[#9b87f5] hover:bg-[#7E69AB]"
+              >
+                <Icon name="CreditCard" className="mr-2 h-4 w-4" />
+                Оплатить консультацию
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -368,6 +413,165 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Модальное окно оплаты */}
+      <Dialog open={isPaymentOpen} onOpenChange={handlePaymentClose}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {paymentStep === 1 ? "Оплата консультации" : 
+               paymentStep === 2 ? "Детали оплаты" : 
+               "Оплата успешно выполнена"}
+            </DialogTitle>
+            <DialogDescription>
+              {paymentStep === 1 ? "Выберите услугу и удобную дату" : 
+               paymentStep === 2 ? "Введите платежные данные" :
+               "Благодарим за оплату!"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {paymentStep === 1 && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Выберите услугу</label>
+                <Select defaultValue={selectedService || undefined} onValueChange={setSelectedService}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите услугу" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {services.map(service => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.name} - {service.price} ₽
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Выберите дату</label>
+                <Input type="date" className="w-full" />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Выберите время</label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите время" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["10:00", "11:30", "13:00", "15:30", "17:00"].map(time => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="pt-4">
+                <Button 
+                  onClick={handlePaymentStepNext} 
+                  disabled={!selectedService}
+                  className="w-full bg-[#9b87f5] hover:bg-[#7E69AB]"
+                >
+                  Продолжить
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {paymentStep === 2 && (
+            <div className="space-y-4">
+              <div className="p-4 bg-[#F6F7FB] rounded-md">
+                <div className="flex justify-between">
+                  <span>Услуга:</span>
+                  <span className="font-medium">
+                    {selectedService && getServiceById(selectedService)?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <span>Стоимость:</span>
+                  <span className="font-medium">
+                    {selectedService && getServiceById(selectedService)?.price} ₽
+                  </span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Номер карты</label>
+                <Input placeholder="0000 0000 0000 0000" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Срок действия</label>
+                  <Input placeholder="ММ/ГГ" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">CVV</label>
+                  <Input placeholder="123" type="password" maxLength={3} />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Имя владельца</label>
+                <Input placeholder="IVAN IVANOV" />
+              </div>
+              
+              <div className="pt-4">
+                <Button 
+                  onClick={handlePaymentComplete} 
+                  className="w-full bg-[#9b87f5] hover:bg-[#7E69AB]"
+                >
+                  <Icon name="LockKeyhole" className="mr-2 h-4 w-4" />
+                  Оплатить {selectedService && getServiceById(selectedService)?.price} ₽
+                </Button>
+              </div>
+              
+              <div className="text-center text-xs text-gray-500 flex items-center justify-center gap-2">
+                <Icon name="Shield" className="h-4 w-4" />
+                Защищенное соединение. Безопасная оплата
+              </div>
+            </div>
+          )}
+
+          {paymentStep === 3 && (
+            <div className="space-y-4 text-center">
+              <div className="flex justify-center">
+                <div className="rounded-full bg-green-100 p-3">
+                  <Icon name="CheckCircle" className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+              
+              <p>Ваша оплата успешно прошла! Детали консультации отправлены на вашу электронную почту.</p>
+              
+              <div className="p-4 bg-[#F6F7FB] rounded-md">
+                <div className="flex justify-between">
+                  <span>Услуга:</span>
+                  <span className="font-medium">
+                    {selectedService && getServiceById(selectedService)?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <span>Сумма:</span>
+                  <span className="font-medium">
+                    {selectedService && getServiceById(selectedService)?.price} ₽
+                  </span>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <span>Номер заказа:</span>
+                  <span className="font-medium">PSY-{Math.floor(Math.random() * 10000)}</span>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button onClick={handlePaymentClose} className="w-full bg-[#9b87f5] hover:bg-[#7E69AB]">
+                  Закрыть
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
